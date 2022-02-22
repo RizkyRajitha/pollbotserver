@@ -1,4 +1,5 @@
 const { Client, Intents } = require("discord.js");
+const supabase = require("./supabase");
 
 const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
 
@@ -22,11 +23,27 @@ client.on("interactionCreate", async (interaction) => {
     ephemeral: true,
   });
 
-  console.log(interaction);
+  // console.log(interaction);
   console.log(interaction.values);
   console.log(interaction.customId);
   console.log(interaction.user.id);
   console.log(interaction.user.username);
+
+  let [pollId, userId] = String(interaction.customId).split("_");
+
+  console.log(userId);
+  console.log(pollId);
+  console.log(String(interaction.customId).split("_"));
+
+  let { error } = await supabase.from("results").upsert({
+    pollId: pollId,
+    selections: interaction.values,
+    discordUsername: `${interaction.user.username}#${interaction.user.discriminator}`,
+    discordUserId: interaction.user.id,
+    userId: userId,
+  });
+
+  console.log(error);
 });
 
 client.login(process.env.TOKEN);

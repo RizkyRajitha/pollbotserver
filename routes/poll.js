@@ -2,35 +2,58 @@ const supabase = require("../supabase");
 const client = require("../discord");
 const uuid = require("uuid").v4;
 const { MessageSelectMenu, MessageActionRow } = require("discord.js");
+const jwtMiddlware = require("../util/jwtmiddleware");
 
 async function routes(fastify, options) {
+  fastify.addHook("onRequest", (request, reply, done) => {
+    jwtMiddlware(request, reply, done);
+  });
   fastify.post("/addguild", async function (request, reply) {
+    console.log(request.locals);
     let body = JSON.parse(request.body);
     console.log(body);
+
+    let { data: guildsData, error } = await supabase
+      .from("guilds")
+      .select("*")
+      .eq("userId", request.locals.sub);
+
+    if (guildsData?.length) {
+      reply.status(400).send({
+        statusCode: 400,
+        success: false,
+        message: "User already has a guild registered",
+      });
+    }
 
     let guilds = client.guilds.cache.map((guild) => {
       console.log(`${guild.name} | ${guild.id}`);
       return guild.id;
     });
+
     console.log(guilds);
+
     if (guilds.includes(body.guildid)) {
       let { data, error } = await supabase.from("guilds").insert({
-        userId: "aaa",
+        userId: request.locals.sub,
         guildId: body.guildid,
         channelId: body.channelid,
       });
+
       console.log(data);
+
       if (error) {
         console.log(error);
         reply.status(500).send({
           statusCode: 500,
           success: false,
-          message: "bot is not found in server",
+          message: error.message,
+        });
+      } else {
+        reply.send({
+          success: true,
         });
       }
-      reply.send({
-        success: true,
-      });
     } else {
       reply.status(500).send({
         statusCode: 500,
@@ -40,9 +63,8 @@ async function routes(fastify, options) {
     }
   }),
     fastify.post("/createpoll", async function (request, reply) {
-      let body = JSON.parse(request.body);
-      //   console.log(body);
-      //   console.log(body.option);
+      let body = request.body;
+      console.log(body);
 
       let optionlist = [];
 
@@ -50,9 +72,9 @@ async function routes(fastify, options) {
         optionlist.push({
           label: element.option,
           description: element.optiondescription,
-          value: `${String(element.option)
-            .replace(" ", "_")
-            .toLowerCase()}_${Math.floor(100000 + Math.random() * 900000)}`,
+          value: `${String(element.option).replace(" ", "_")}_${Math.floor(
+            100000 + Math.random() * 900000
+          )}`,
         });
       });
 
@@ -60,8 +82,10 @@ async function routes(fastify, options) {
 
       let pollid = uuid();
 
+      let customId = `${pollid}_${request.locals.sub}`;
+
       let pollmenu = new MessageSelectMenu()
-        .setCustomId(pollid)
+        .setCustomId(customId)
         .setPlaceholder("Nothing selected")
         .addOptions(optionlist);
 
@@ -69,24 +93,24 @@ async function routes(fastify, options) {
         pollmenu.setMinValues(1).setMaxValues(optionlist.length);
       }
 
-      const { data, error } = await supabase.from("polls").insert([
+      const { error } = await supabase.from("polls").insert([
         {
           id: pollid,
           description: body.description,
           multichoice: body.multichoice,
           options: JSON.stringify(optionlist),
-          channelId: "944543166965624877",
-          userId: "text",
+          channelId: body.channelId,
+          userId: body.userId,
         },
       ]);
 
       if (error) {
         console.log(error);
-        reply.status(500).send({ error: error });
+        reply.status(500).send({ success: false, message: error.message });
       }
 
       const row = new MessageActionRow().addComponents(pollmenu);
-      let chan = client.channels.cache.get("944543166965624877");
+      let chan = client.channels.cache.get(body.channelId);
 
       try {
         await chan.send({
@@ -95,6 +119,7 @@ async function routes(fastify, options) {
         });
       } catch (error) {
         console.log(error);
+        reply.status(500).send({ success: false, message: error.message });
       }
 
       reply.send({ success: true });
