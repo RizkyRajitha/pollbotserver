@@ -93,36 +93,81 @@ async function routes(fastify, options) {
         pollmenu.setMinValues(1).setMaxValues(optionlist.length);
       }
 
-      const { error } = await supabase.from("polls").insert([
-        {
-          id: pollid,
-          description: body.description,
-          multichoice: body.multichoice,
-          options: JSON.stringify(optionlist),
-          channelId: body.channelId,
-          userId: body.userId,
-        },
-      ]);
-
-      if (error) {
-        console.log(error);
-        reply.status(500).send({ success: false, message: error.message });
-      }
-
       const row = new MessageActionRow().addComponents(pollmenu);
       let chan = client.channels.cache.get(body.channelId);
 
       try {
-        await chan.send({
+        let pollmessage = await chan.send({
           content: body.description,
           components: [row],
         });
+        console.log(pollmessage);
+
+        const { error } = await supabase.from("polls").insert([
+          {
+            id: pollid,
+            description: body.description,
+            multichoice: body.multichoice,
+            options: JSON.stringify(optionlist),
+            channelId: body.channelId,
+            userId: body.userId,
+            messageId: pollmessage.id,
+          },
+        ]);
+
+        if (error) {
+          console.log(error);
+          reply.status(500).send({ success: false, message: error.message });
+        }
       } catch (error) {
         console.log(error);
         reply.status(500).send({ success: false, message: error.message });
       }
 
       reply.send({ success: true });
+    }),
+    fastify.post("/deletepoll", async function (request, reply) {
+      console.log(request.body);
+
+      const { error, data } = await supabase
+        .from("polls")
+        .select("*")
+        .eq("id", request.body.pollId);
+
+      if (error) {
+        console.log(error);
+        reply.status(500).send({ success: false, message: error.message });
+        return;
+      }
+
+      console.log(data);
+      console.log(data[0].messageId);
+
+      // data = data[0];
+
+      try {
+        let chan = client.channels.cache.get(data[0].channelId);
+
+        let message = await chan.messages.fetch(data[0].messageId);
+
+        console.log(message.content);
+        await message.delete();
+
+        const { error: delerror } = await supabase
+          .from("polls")
+          .delete("*")
+          .eq("id", request.body.pollId);
+
+        if (delerror) {
+          console.log(delerror);
+          reply.status(500).send({ success: false, message: delerror.message });
+          return;
+        }
+
+        reply.send({ success: true });
+      } catch (error) {
+        reply.status(500).send({ success: false, message: error.message });
+      }
     });
 }
 
