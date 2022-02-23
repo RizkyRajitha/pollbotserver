@@ -5,6 +5,7 @@ const fastify = require("fastify")({
 });
 
 const PORT = process.env.PORT || 8000;
+const ADDRESS = process.env.ADDRESS || "0.0.0.0";
 
 fastify.register(require("fastify-cors"), {
   origin: "*",
@@ -19,7 +20,8 @@ fastify.get("/", function (request, reply) {
   reply.send({ message: "poll bot" });
 });
 
-fastify.listen(PORT, function (err, address) {
+fastify.listen(PORT, ADDRESS, function (err, address) {
+  console.log(address);
   if (err) {
     fastify.log.error(err);
     process.exit(1);
