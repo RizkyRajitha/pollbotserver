@@ -18,11 +18,6 @@ client.on("interactionCreate", async (interaction) => {
   // if (!interaction.isButton() && !interaction.isSelectMenu()) return;
   // if () return;
 
-  interaction.reply({
-    content: "You selected " + interaction.values.join(" "),
-    ephemeral: true,
-  });
-
   // console.log(interaction);
   console.log(interaction.values);
   console.log(interaction.customId);
@@ -33,7 +28,27 @@ client.on("interactionCreate", async (interaction) => {
 
   console.log(userId);
   console.log(pollId);
-  console.log(String(interaction.customId).split("_"));
+
+  let { data: pollData, error: pollerror } = await supabase
+    .from("polls")
+    .select("active,description")
+    .eq("id", pollId)
+    .single();
+
+  if (pollerror) {
+    console.log(pollerror);
+    return;
+  }
+
+  console.log(pollData);
+
+  if (!pollData.active) {
+    interaction.reply({
+      content: "This poll has been ended ",
+      ephemeral: true,
+    });
+    return;
+  }
 
   let { error } = await supabase.from("results").upsert({
     pollId: pollId,
@@ -43,7 +58,25 @@ client.on("interactionCreate", async (interaction) => {
     userId: userId,
   });
 
-  console.log(error);
+  if (error) {
+    console.log(error);
+    return;
+  }
+
+  let selectedval =
+    interaction.values.length > 1
+      ? interaction.values.map((ele) => ele.split("_").join(","))
+      : interaction.values[0].split("_")[0];
+
+  console.log(selectedval);
+
+  interaction.reply({
+    content: `You selected value : ${selectedval} for poll : ${pollData.description.substring(
+      0,
+      20
+    )}...`,
+    ephemeral: true,
+  });
 });
 
 client.login(process.env.DISCORD_TOKEN);

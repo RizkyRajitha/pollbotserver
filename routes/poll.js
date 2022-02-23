@@ -140,10 +140,8 @@ async function routes(fastify, options) {
         return;
       }
 
-      console.log(data);
-      console.log(data[0].messageId);
-
-      // data = data[0];
+      // console.log(data);
+      // console.log(data[0].messageId);
 
       try {
         let chan = client.channels.cache.get(data[0].channelId);
@@ -152,6 +150,13 @@ async function routes(fastify, options) {
 
         console.log(message.content);
         await message.delete();
+
+        chan.send({
+          content: `${message.content.substring(
+            0,
+            10
+          )}... poll deleted by user`,
+        });
 
         const { error: delerror } = await supabase
           .from("polls")
@@ -168,6 +173,22 @@ async function routes(fastify, options) {
       } catch (error) {
         reply.status(500).send({ success: false, message: error.message });
       }
+    }),
+    fastify.post("/endpoll", async function (request, reply) {
+      
+      const { error: updateerror } = await supabase
+        .from("polls")
+        .update({ active: false })
+        .eq("id", request.body.pollId);
+
+      if (updateerror) {
+        console.log(updateerror);
+        reply
+          .status(500)
+          .send({ success: false, message: updateerror.message });
+        return;
+      }
+      reply.send({ success: true });
     });
 }
 
