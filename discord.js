@@ -46,6 +46,6 @@ client.on("interactionCreate", async (interaction) => {
   console.log(error);
 });
 
-client.login(process.env.TOKEN);
+client.login(process.env.DISCORD_TOKEN);
 
 module.exports = client;
