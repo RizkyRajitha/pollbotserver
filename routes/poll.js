@@ -132,7 +132,8 @@ async function routes(fastify, options) {
       const { error, data } = await supabase
         .from("polls")
         .select("*")
-        .eq("id", request.body.pollId);
+        .eq("id", request.body.pollId)
+        .single();
 
       if (error) {
         console.log(error);
@@ -144,9 +145,9 @@ async function routes(fastify, options) {
       // console.log(data[0].messageId);
 
       try {
-        let chan = client.channels.cache.get(data[0].channelId);
+        let chan = client.channels.cache.get(data.channelId);
 
-        let message = await chan.messages.fetch(data[0].messageId);
+        let message = await chan.messages.fetch(data.messageId);
 
         console.log(message.content);
         await message.delete();
@@ -175,10 +176,21 @@ async function routes(fastify, options) {
       }
     }),
     fastify.post("/endpoll", async function (request, reply) {
-      
+      const { pollerror, data: pollData } = await supabase
+        .from("polls")
+        .select("*")
+        .eq("id", request.body.pollId)
+        .single();
+
+      if (pollerror) {
+        console.log(pollerror);
+        reply.status(500).send({ success: false, message: pollerror.message });
+        return;
+      }
+
       const { error: updateerror } = await supabase
         .from("polls")
-        .update({ active: false })
+        .update({ active: !pollData.active })
         .eq("id", request.body.pollId);
 
       if (updateerror) {

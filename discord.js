@@ -37,6 +37,10 @@ client.on("interactionCreate", async (interaction) => {
 
   if (pollerror) {
     console.log(pollerror);
+    interaction.reply({
+      content: `Error Occured ${error.message}`,
+      ephemeral: true,
+    });
     return;
   }
 
@@ -44,7 +48,7 @@ client.on("interactionCreate", async (interaction) => {
 
   if (!pollData.active) {
     interaction.reply({
-      content: "This poll has been ended ",
+      content: "This poll has been ended",
       ephemeral: true,
     });
     return;

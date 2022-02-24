@@ -2,7 +2,6 @@ const jwt = require("jsonwebtoken");
 
 const jwtMiddlware = (request, reply, done) => {
   try {
-    // console.log(request.headers);
     let data = jwt.verify(
       request.headers.authorization,
       process.env.SUPABASE_JWT_SECRET
