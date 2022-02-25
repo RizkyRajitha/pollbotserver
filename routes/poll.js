@@ -10,7 +10,8 @@ async function routes(fastify, options) {
   });
   fastify.post("/addguild", async function (request, reply) {
     console.log(request.locals);
-    let body = JSON.parse(request.body);
+    let body = request.body;
+    // let body = JSON.parse(request.body);
     console.log(body);
 
     let { data: guildsData, error: guildError } = await supabase
