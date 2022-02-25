@@ -15,8 +15,6 @@ client.on("interactionCreate", async (interaction) => {
   console.log("interactionCreate");
 
   if (!interaction.isSelectMenu()) return;
-  // if (!interaction.isButton() && !interaction.isSelectMenu()) return;
-  // if () return;
 
   // console.log(interaction);
   console.log(interaction.values);
@@ -25,9 +23,6 @@ client.on("interactionCreate", async (interaction) => {
   console.log(interaction.user.username);
 
   let [pollId, userId] = String(interaction.customId).split("_");
-
-  console.log(userId);
-  console.log(pollId);
 
   let { data: pollData, error: pollerror } = await supabase
     .from("polls")
@@ -44,7 +39,7 @@ client.on("interactionCreate", async (interaction) => {
       });
       console.log(pollerror);
     } catch (error) {
-      console.log("e1");
+      console.log(error);
     }
     return;
   }
@@ -58,7 +53,7 @@ client.on("interactionCreate", async (interaction) => {
         ephemeral: true,
       });
     } catch (error) {
-      console.log("e2");
+      console.log(error);
     }
     return;
   }
@@ -91,7 +86,7 @@ client.on("interactionCreate", async (interaction) => {
     content: `You selected value : "${selectedval}" for poll : "${pollData.description.substring(
       0,
       40
-    )}""...`,
+    )}"...`,
     ephemeral: true,
   });
 });

@@ -11,7 +11,6 @@ async function routes(fastify, options) {
   fastify.post("/addguild", async function (request, reply) {
     console.log(request.locals);
     let body = request.body;
-    // let body = JSON.parse(request.body);
     console.log(body);
 
     let { data: guildsData, error: guildError } = await supabase
@@ -83,9 +82,6 @@ async function routes(fastify, options) {
         optionlist.push({
           label: element.option,
           description: element.optiondescription,
-          // value: `${String(element.option).replace(" ", "_")}_${Math.floor(
-          //   100000 + Math.random() * 900000
-          // )}`,
           value: `${String(element.option)}_${Math.floor(
             100000 + Math.random() * 900000
           )}`,
@@ -111,8 +107,9 @@ async function routes(fastify, options) {
       let chan = client.channels.cache.get(body.channelId);
 
       try {
+        let msgbody = `📢📢 Poll \n${body.description}\n\nSelect from below options`;
         let pollmessage = await chan.send({
-          content: body.description,
+          content: msgbody,
           components: [row],
         });
         console.log(pollmessage);
@@ -155,9 +152,6 @@ async function routes(fastify, options) {
         return;
       }
 
-      // console.log(data);
-      // console.log(data[0].messageId);
-
       try {
         let chan = client.channels.cache.get(data.channelId);
 
@@ -167,9 +161,9 @@ async function routes(fastify, options) {
         await message.delete();
 
         chan.send({
-          content: `${message.content.substring(
+          content: `${data.description.substring(
             0,
-            10
+            40
           )}... poll deleted by user`,
         });
 
