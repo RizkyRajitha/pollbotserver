@@ -13,10 +13,20 @@ async function routes(fastify, options) {
     let body = JSON.parse(request.body);
     console.log(body);
 
-    let { data: guildsData, error } = await supabase
+    let { data: guildsData, error: guildError } = await supabase
       .from("guilds")
       .select("*")
       .eq("userId", request.locals.sub);
+
+    if (guildError) {
+      console.log(guildError);
+      reply.status(500).send({
+        statusCode: 500,
+        success: false,
+        message: guildError.message,
+      });
+      return;
+    }
 
     if (guildsData?.length) {
       reply.status(400).send({
@@ -49,11 +59,11 @@ async function routes(fastify, options) {
           success: false,
           message: error.message,
         });
-      } else {
-        reply.send({
-          success: true,
-        });
+        return;
       }
+      reply.send({
+        success: true,
+      });
     } else {
       reply.status(500).send({
         statusCode: 500,
@@ -72,7 +82,10 @@ async function routes(fastify, options) {
         optionlist.push({
           label: element.option,
           description: element.optiondescription,
-          value: `${String(element.option).replace(" ", "_")}_${Math.floor(
+          // value: `${String(element.option).replace(" ", "_")}_${Math.floor(
+          //   100000 + Math.random() * 900000
+          // )}`,
+          value: `${String(element.option)}_${Math.floor(
             100000 + Math.random() * 900000
           )}`,
         });

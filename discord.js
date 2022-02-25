@@ -37,20 +37,29 @@ client.on("interactionCreate", async (interaction) => {
 
   if (pollerror) {
     console.log(pollerror);
-    interaction.reply({
-      content: `Error Occured ${error.message}`,
-      ephemeral: true,
-    });
+    try {
+      interaction.reply({
+        content: `Error Occured ${pollerror.message}`,
+        ephemeral: true,
+      });
+      console.log(pollerror);
+    } catch (error) {
+      console.log("e1");
+    }
     return;
   }
 
   console.log(pollData);
 
   if (!pollData.active) {
-    interaction.reply({
-      content: "This poll has been ended",
-      ephemeral: true,
-    });
+    try {
+      interaction.reply({
+        content: "This poll has been ended",
+        ephemeral: true,
+      });
+    } catch (error) {
+      console.log("e2");
+    }
     return;
   }
 
@@ -64,6 +73,10 @@ client.on("interactionCreate", async (interaction) => {
 
   if (error) {
     console.log(error);
+    interaction.reply({
+      content: `Error Occured ${error.message}`,
+      ephemeral: true,
+    });
     return;
   }
 
@@ -75,10 +88,10 @@ client.on("interactionCreate", async (interaction) => {
   console.log(selectedval);
 
   interaction.reply({
-    content: `You selected value : ${selectedval} for poll : ${pollData.description.substring(
+    content: `You selected value : "${selectedval}" for poll : "${pollData.description.substring(
       0,
-      20
-    )}...`,
+      40
+    )}""...`,
     ephemeral: true,
   });
 });
