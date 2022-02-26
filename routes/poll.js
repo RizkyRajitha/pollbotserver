@@ -161,10 +161,10 @@ async function routes(fastify, options) {
         await message.delete();
 
         chan.send({
-          content: `${data.description.substring(
+          content: `"${data.description.substring(
             0,
             40
-          )}... poll deleted by user`,
+          )}"... poll deleted by user`,
         });
 
         const { error: delerror } = await supabase
